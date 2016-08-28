@@ -1,18 +1,18 @@
-require 'datadoge/version'
-require 'gem_config'
-require 'statsd'
+require "datadoge/version"
+require "gem_config"
+require "statsd"
 
 module Datadoge
   include GemConfig::Base
 
   with_configuration do
-    has :environments, classes: Array, default: ['production']
-    has :prefix, classes: [Symbol, String], default: 'rails'
+    has :environments, classes: Array, default: ["production"]
+    has :prefix, classes: [Symbol, String], default: "rails"
     has :tags, classes: Array, default: ["host:#{ENV['INSTRUMENTATION_HOSTNAME']},role:#{Rails.application.class.parent_name}"]
   end
 
   class Railtie < Rails::Railtie
-    initializer 'datadoge.configure_rails_initialization' do |_app|
+    initializer "datadoge.configure_rails_initialization" do |_app|
       $statsd = Statsd.new
 
       ActiveSupport::Notifications.subscribe(/process_action.action_controller/) do |*args|
@@ -21,12 +21,12 @@ module Datadoge
         action = "action:#{event.payload.fetch(:action)}"
         controller_action = "controller_action:#{event.payload.fetch(:controller)}##{event.payload.fetch(:action)}"
         format = "format:#{event.payload.fetch(:format, 'all')}"
-        format = 'format:all' if format == 'format:*/*'
+        format = "format:all" if format == "format:*/*"
         tags = [controller, action, controller_action, format] + Datadoge.configuration.tags
 
-        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: 'request.duration',       value: event.duration
-        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: 'request.db_runtime',     value: event.payload[:db_runtime]
-        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: 'request.view_runtime',   value: event.payload[:view_runtime]
+        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: "request.duration",       value: event.duration
+        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: "request.db_runtime",     value: event.payload[:db_runtime]
+        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: "request.view_runtime",   value: event.payload[:view_runtime]
 
         method_path = "#{event.payload.fetch(:method)}_#{event.payload.fetch(:path)}"
         ActiveSupport::Notifications.instrument :performance, action: :increment, tags: tags, measurement: "request.method_path.#{method_path}"
