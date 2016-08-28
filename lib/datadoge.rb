@@ -26,9 +26,15 @@ module Datadoge
         format = "format:all" if format == "format:*/*"
         tags = [controller, action, controller_action, format] + Datadoge.configuration.tags
 
-        ActiveSupport::Notifications.instrument "datadoge", action: :timing, tags: tags, measurement: "request.duration",     value: event.duration
-        ActiveSupport::Notifications.instrument "datadoge", action: :timing, tags: tags, measurement: "request.db_runtime",   value: payload[:db_runtime]
-        ActiveSupport::Notifications.instrument "datadoge", action: :timing, tags: tags, measurement: "request.view_runtime", value: payload[:view_runtime]
+        ActiveSupport::Notifications.instrument "datadoge", action: :timing, tags: tags, measurement: "request.duration", value: event.duration
+
+        if (db_runtime = payload[:db_runtime])
+          ActiveSupport::Notifications.instrument "datadoge", action: :timing, tags: tags, measurement: "request.db_runtime", value: db_runtime
+        end
+
+        if (view_runtime = payload[:view_runtime])
+          ActiveSupport::Notifications.instrument "datadoge", action: :timing, tags: tags, measurement: "request.view_runtime", value: view_runtime
+        end
 
         method_path = "#{payload.fetch(:method)}_#{payload.fetch(:path)}"
         ActiveSupport::Notifications.instrument "datadoge", action: :increment, tags: tags, measurement: "request.method_path.#{method_path}"
