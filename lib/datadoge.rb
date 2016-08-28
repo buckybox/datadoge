@@ -19,9 +19,9 @@ module Datadoge
         event = ActiveSupport::Notifications::Event.new(*args)
         payload = event.payload
 
-        controller = "controller:#{payload.fetch(:controller)}"
+        controller = "controller:#{payload.fetch(:controller).underscore}"
         action = "action:#{payload.fetch(:action)}"
-        controller_action = "controller_action:#{payload.fetch(:controller)}##{payload.fetch(:action)}"
+        controller_action = "controller_action:#{payload.fetch(:controller).underscore}_#{payload.fetch(:action)}"
         format = "format:#{payload.fetch(:format, 'all')}"
         format = "format:all" if format == "format:*/*"
         tags = [controller, action, controller_action, format] + Datadoge.configuration.tags
