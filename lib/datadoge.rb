@@ -22,12 +22,16 @@ module Datadoge
         controller_action = "controller_action:#{event.payload.fetch(:controller)}##{event.payload.fetch(:action)}"
         format = "format:#{event.payload.fetch(:format, 'all')}"
         format = 'format:all' if format == 'format:*/*'
-        status = event.payload.fetch(:status, 500)
         tags = [controller, action, controller_action, format] + Datadoge.configuration.tags
 
-        ActiveSupport::Notifications.instrument :performance, action: :timing, tags: tags, measurement: 'request.total_duration', value: event.duration
-        ActiveSupport::Notifications.instrument :performance, action: :timing, tags: tags,  measurement: 'database.query.time', value: event.payload[:db_runtime]
-        ActiveSupport::Notifications.instrument :performance, action: :timing, tags: tags,  measurement: 'web.view.time', value: event.payload[:view_runtime]
+        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: 'request.duration',       value: event.duration
+        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: 'request.db_runtime',     value: event.payload[:db_runtime]
+        ActiveSupport::Notifications.instrument :performance, action: :timing,    tags: tags, measurement: 'request.view_runtime',   value: event.payload[:view_runtime]
+
+        method_path = "#{event.payload.fetch(:method)}_#{event.payload.fetch(:path)}"
+        ActiveSupport::Notifications.instrument :performance, action: :increment, tags: tags, measurement: "request.method_path.#{method_path}"
+
+        status = event.payload.fetch(:status, 500)
         ActiveSupport::Notifications.instrument :performance, action: :increment, tags: tags, measurement: "request.status.#{status}"
       end
 
