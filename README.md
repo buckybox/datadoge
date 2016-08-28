@@ -30,6 +30,8 @@ To enable Datadog reporting in non-production environments, add the following to
 
     Datadoge.configure do |config|
       config.environments = ['staging', 'production']
+      config.prefix = :rails_performance
+      config.tags = ['role:web']
     end
 
 ## Contributing
