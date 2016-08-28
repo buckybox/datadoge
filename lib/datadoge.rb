@@ -8,7 +8,7 @@ module Datadoge
   with_configuration do
     has :environments, classes: Array, default: ["production"]
     has :prefix, classes: [Symbol, String], default: "rails"
-    has :tags, classes: Array, default: ["host:#{ENV['INSTRUMENTATION_HOSTNAME']},role:#{Rails.application.class.parent_name}"]
+    has :tags, classes: Array, default: []
   end
 
   class Railtie < Rails::Railtie
