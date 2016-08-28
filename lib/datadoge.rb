@@ -22,7 +22,7 @@ module Datadoge
         controller_action = "controller_action:#{event.payload.fetch(:controller)}##{event.payload.fetch(:action)}"
         format = "format:#{event.payload.fetch(:format, 'all')}"
         format = 'format:all' if format == 'format:*/*'
-        status = event.payload.fetch(:status)
+        status = event.payload.fetch(:status, 500)
         tags = [controller, action, controller_action, format] + Datadoge.configuration.tags
 
         ActiveSupport::Notifications.instrument :performance, action: :timing, tags: tags, measurement: 'request.total_duration', value: event.duration
