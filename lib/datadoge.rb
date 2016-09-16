@@ -98,7 +98,10 @@ module Datadoge
         payload = event.payload
 
         query = payload.fetch(:sql).strip
-        command = query.match(/\A(\w+) /)[1]
+
+        matched = query.match(/\A(\w+) /)
+
+        command = matched && matched[1]
 
         tags = Datadoge.configuration.tags
 
