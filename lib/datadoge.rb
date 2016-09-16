@@ -11,29 +11,48 @@ module Datadoge
     has :tags, classes: Array, default: []
   end
 
+  module ExtraInstrumentation
+    def self.included(base)
+      base.class_eval do
+        def append_info_to_payload(payload)
+          payload[:session] = request.session
+        end
+      end
+    end
+  end
+
   class Railtie < Rails::Railtie
-    initializer "datadoge.configure_rails_initialization" do |_app|
+    initializer "datadoge.configure_rails_initialization" do
       $statsd = Statsd.new
+
+      ActionController::Instrumentation.include ExtraInstrumentation
 
       ActiveSupport::Notifications.subscribe("process_action.action_controller") do |*args|
         event = ActiveSupport::Notifications::Event.new(*args)
         payload = event.payload
 
         controller = payload.fetch(:controller).underscore
+        controller_parent = controller.match(%r{\A([^/]+)})[1]
         action = payload.fetch(:action)
         controller_action = "#{controller}.#{action}"
         method = payload.fetch(:method)
         format = payload[:format] || "all"
         format = "all" if format == "*/*"
         status = payload[:status].to_s
+        session = payload[:session] || {}
+        user_types = session.keys.grep(/\Awarden\.user\..+\.key\Z/).map do |warden|
+          warden.match(/warden\.user\.(.+)\.key/)[1]
+        end
+        user_types = ["none"] if user_types.empty?
 
         tags = Datadoge.configuration.tags + [
           "controller:#{controller}",
+          "controller_parent:#{controller_parent}",
           "action:#{action}",
           "controller_action:#{controller_action}",
           "method:#{method}",
           "format:#{format}"
-        ]
+        ] + user_types.map { |user_type| "user_type:#{user_type}" }
         tags << "status:#{status}" if status.present?
 
         ActiveSupport::Notifications.instrument "datadoge", action: :increment, tags: tags, measurement: "request.total"
